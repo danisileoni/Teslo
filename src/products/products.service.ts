@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +7,8 @@ import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger('ProductsServices');
+
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -19,8 +21,7 @@ export class ProductsService {
 
       return product;
     } catch (error) {
-      console.log(error);
-      throw new InternalServerErrorException('AYUDA ME MIEROOOO');
+      this.handeleDbExepctions(error);
     }
   }
 
@@ -38,5 +39,16 @@ export class ProductsService {
 
   remove(id: number) {
     return `This action removes a #${id} product`;
+  }
+
+  private handeleDbExepctions(error: any) {
+    console.log(error);
+    if (error.code === '22P02') throw new BadRequestException(error.detail);
+
+    this.logger.error(error);
+
+    throw new InternalServerErrorException(
+      'Unexpected error, check server logs',
+    );
   }
 }

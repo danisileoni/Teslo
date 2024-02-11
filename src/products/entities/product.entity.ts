@@ -22,7 +22,7 @@ export class Product {
   description: string;
 
   @Column({
-    type: 'float',
+    type: 'text',
     unique: true,
   })
   slug: string;
