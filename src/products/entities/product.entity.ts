@@ -62,7 +62,7 @@ export class Product {
     () => ProductImage,
     (productImage) => productImage.product,
     // eslint-disable-next-line prettier/prettier
-    { cascade: true },
+    { cascade: true, eager: true },
   )
   images?: ProductImage[];
 
