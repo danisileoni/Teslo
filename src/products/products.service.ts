@@ -8,7 +8,7 @@ import {
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
@@ -23,6 +23,8 @@ export class ProductsService {
 
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -91,18 +93,37 @@ export class ProductsService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+    const { images, ...toUpdate } = updateProductDto;
+
+    const product = await this.productRepository.preload({ id, ...toUpdate });
+
+    if (!product)
+      throw new NotFoundException(`Product with id: ${id} not found`);
+
+    // Create query runner
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const product = await this.productRepository.preload({
-        id: id,
-        ...updateProductDto,
-        images: [],
-      });
+      if (images) {
+        await queryRunner.manager.delete(ProductImage, { product: { id } });
 
-      if (!product)
-        throw new NotFoundException(`Product with id: ${id} not found`);
+        product.images = images.map((image) =>
+          this.productImageRepository.create({ url: image }),
+        );
+      }
 
-      return await this.productRepository.save(product);
+      await queryRunner.manager.save(product);
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return this.findOnePlain(id);
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+
       this.handeleDbExepctions(error);
     }
   }
@@ -123,5 +144,15 @@ export class ProductsService {
     throw new InternalServerErrorException(
       'Unexpected error, check server logs',
     );
+  }
+
+  async deleteAllProducts() {
+    const query = this.productRepository.createQueryBuilder('product');
+
+    try {
+      return await query.delete().where({}).execute();
+    } catch (error) {
+      this.handeleDbExepctions(error);
+    }
   }
 }
