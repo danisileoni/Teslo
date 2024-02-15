@@ -64,7 +64,7 @@ export class Product {
     // eslint-disable-next-line prettier/prettier
     { cascade: true },
   )
-  images?: ProductImage;
+  images?: ProductImage[];
 
   @BeforeInsert()
   checkSlugInsert() {

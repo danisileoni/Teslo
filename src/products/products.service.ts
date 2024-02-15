@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { ProductImage } from './entities/product-image.entity';
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger('ProductsServices');
@@ -19,14 +20,25 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { images = [], ...productsDetails } = createProductDto;
+
     try {
-      const product = this.productRepository.create(createProductDto);
+      const product = this.productRepository.create({
+        ...productsDetails,
+        images: images.map((image) =>
+          this.productImageRepository.create({ url: image }),
+        ),
+      });
       await this.productRepository.save(product);
 
-      return product;
+      return { ...product, images };
     } catch (error) {
       this.handeleDbExepctions(error);
     }
@@ -69,6 +81,7 @@ export class ProductsService {
       const product = await this.productRepository.preload({
         id: id,
         ...updateProductDto,
+        images: [],
       });
 
       if (!product)
