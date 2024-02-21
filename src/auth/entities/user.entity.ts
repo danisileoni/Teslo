@@ -1,9 +1,4 @@
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-  TreeLevelColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -14,7 +9,7 @@ export class User {
     type: 'text',
     unique: true,
   })
-  emai: string;
+  email: string;
 
   @Column({
     type: 'text',
@@ -28,6 +23,7 @@ export class User {
 
   @Column({
     type: 'bool',
+    default: true,
   })
   isActive: boolean;
 
