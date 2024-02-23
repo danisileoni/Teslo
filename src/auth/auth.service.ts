@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-uset.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { User } from './entities/user.entity';
 
 import * as bcrypt from 'bcrypt';
@@ -32,6 +34,30 @@ export class AuthService {
       return user;
 
       //TODO: return JWT the access
+    } catch (error) {
+      this.handelDBErrors(error);
+    }
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    try {
+      const { password, email } = loginUserDto;
+
+      const user = await this.userRepositoy.findOne({
+        where: { email },
+        select: { email: true, password: true },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Credentials are not valid (email)');
+      }
+
+      if (bcrypt.compareSync(password, user.password)) {
+        throw new UnauthorizedException('Credentials are not valid (password)');
+      }
+
+      return user;
+      //TODO: return JWT
     } catch (error) {
       this.handelDBErrors(error);
     }
