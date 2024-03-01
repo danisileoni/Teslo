@@ -13,6 +13,7 @@ import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
 import { ProductImage } from './entities/product-image.entity';
+import { User } from 'src/auth/entities/user.entity';
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger('ProductsServices');
@@ -27,7 +28,7 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { images = [], ...productsDetails } = createProductDto;
 
@@ -37,6 +38,7 @@ export class ProductsService {
         images: images.map((image) =>
           this.productImageRepository.create({ url: image }),
         ),
+        user,
       });
       await this.productRepository.save(product);
 
@@ -92,7 +94,7 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto,  user: User) {
     const { images, ...toUpdate } = updateProductDto;
 
     const product = await this.productRepository.preload({ id, ...toUpdate });
@@ -114,6 +116,7 @@ export class ProductsService {
         );
       }
 
+      product.user = user;
       await queryRunner.manager.save(product);
 
       await queryRunner.commitTransaction();
