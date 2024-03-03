@@ -26,18 +26,50 @@ export class ProductsController {
 
   @Post()
   @Auth()
-  @ApiResponse({ status: 201, description: 'Product was created', type: Product })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
+  @ApiResponse({
+    status: 201,
+    description: 'Product was created',
+    type: Product,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorizet - Token invalid',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Token related',
+  })
   create(@Body() createProductDto: CreateProductDto, @GetUser() user: User) {
     return this.productsService.create(createProductDto, user);
   }
 
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Products found',
+    type: Product,
+  })
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.productsService.findAll(paginationDto);
   }
 
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product found',
+    type: Product,
+  })
   @Get(':term')
   findOne(@Param('term') term: string) {
     return this.productsService.findOnePlain(term);
@@ -45,6 +77,23 @@ export class ProductsController {
 
   @Patch(':id')
   @Auth(ValidRoles.admin)
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product Update',
+    type: Product,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorizet - Token invalid',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found',
+  })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -53,6 +102,23 @@ export class ProductsController {
     return this.productsService.update(id, updateProductDto, user);
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'Product Delete',
+    type: Product,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorizet - Token invalid',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
+  })
   @Delete(':id')
   @Auth(ValidRoles.admin)
   remove(@Param('id', ParseUUIDPipe) id: string) {
